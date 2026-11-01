@@ -13,23 +13,101 @@ function chart(id, type, labels, datasets, options) {
 }
 </script>
 <style>
-  :root { --bg: #f5f7fa; --panel: #fff; --text: #1d2433; --muted: #5f6b7a; --line: #dfe3ea; --accent: #2563eb;
-          --ok: #15803d; --warn: #b45309; --bad: #b91c1c; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #111722; --panel: #1a2230; --text: #e6eaf0; --muted: #9aa5b4; --line: #2c3647; --accent: #60a5fa;
-            --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; }
-  }
+  /* dark only: the glass bead field behind every page is always dark */
+  :root { --bg: #111722; --panel: rgba(12, 15, 24, 0.38); --text: #e6eaf0; --muted: #a9b3c1;
+          --line: rgba(255, 255, 255, 0.1); --accent: #60a5fa;
+          --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--text); }
-  nav { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; padding: 12px 24px;
-        background: var(--panel); border-bottom: 1px solid var(--line); }
-  nav strong { margin-right: 16px; font-size: 18px; }
-  nav a { color: var(--muted); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
-  nav a[aria-current] { color: var(--accent); border-color: var(--accent); }
-  main { max-width: 1200px; margin: 0 auto; padding: 16px 24px 48px; }
+
+  /* glass sidebar: a frosted rail over a Three.js bead field that refracts the backdrop */
+  .glass { position: fixed; inset: 0; z-index: 0; overflow: hidden; isolation: isolate; background: #08090d; }
+  .glass canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+  /* scrim: bright beads would otherwise swallow the wordmark */
+  .glass::before { position: absolute; inset: 0 auto 0 0; z-index: 5; width: 42%; pointer-events: none; content: "";
+                   background: linear-gradient(90deg, rgba(6, 7, 11, 0.66), rgba(6, 7, 11, 0)); }
+  .glass::after { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; opacity: 0.12;
+                  mix-blend-mode: soft-light;
+                  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"); }
+  .rail { position: fixed; top: 50%; left: clamp(20px, 3.4vw, 68px); z-index: 10; display: flex; flex-direction: column;
+          gap: clamp(6px, 0.5vw, 11px); width: clamp(158px, 12.5vw, 250px); padding: clamp(5px, 0.42vw, 9px);
+          border-radius: clamp(20px, 1.7vw, 34px); transform: translateY(-50%);
+          background: linear-gradient(160deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+          box-shadow: 0 30px 64px -26px rgba(0, 0, 0, 0.92), inset 0 1px 0 rgba(255, 255, 255, 0.44),
+                      inset 0 -1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+          backdrop-filter: blur(26px) saturate(190%); -webkit-backdrop-filter: blur(26px) saturate(190%); }
+  .rail::before { position: absolute; inset: 0; pointer-events: none; content: ""; border-radius: inherit;
+                  background: linear-gradient(168deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 30%,
+                                              rgba(255, 255, 255, 0) 76%, rgba(255, 255, 255, 0.14) 100%); }
+  .rail-brand { position: relative; display: flex; gap: clamp(7px, 0.6vw, 13px); align-items: center;
+                padding: clamp(6px, 0.5vw, 12px) clamp(8px, 0.7vw, 15px); color: #fbfbfe; text-decoration: none;
+                font-size: clamp(13px, 0.94vw, 20px); font-weight: 600; letter-spacing: -0.018em; }
+  .rail-brand svg { flex: none; width: clamp(22px, 1.55vw, 33px); height: clamp(22px, 1.55vw, 33px);
+                    border-radius: clamp(7px, 0.5vw, 11px);
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+  .rail hr { width: auto; height: 1px; margin: clamp(2px, 0.2vw, 5px) clamp(6px, 0.5vw, 12px); border: 0;
+             background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.04)); }
+  .rail nav { display: flex; flex-direction: column; gap: clamp(2px, 0.2vw, 5px); }
+  .rail nav a { display: flex; gap: clamp(5px, 0.44vw, 9px); align-items: center; height: clamp(30px, 2.2vw, 44px);
+                padding: 0 clamp(10px, 0.86vw, 18px); border: 1px solid transparent; border-radius: clamp(12px, 1vw, 22px);
+                color: rgba(255, 255, 255, 0.66); text-decoration: none; white-space: nowrap;
+                font-size: clamp(12px, 0.78vw, 17px); font-weight: 500; letter-spacing: -0.005em;
+                transform-origin: 0 50%; will-change: height, transform;
+                transition: color 0.18s, border-color 0.2s, background 0.2s, box-shadow 0.2s; }
+  .rail nav a[data-near="true"], .rail nav a:focus-visible {
+    outline: none; color: #fff; border-color: rgba(255, 255, 255, 0.24);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.07));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 8px 18px -10px rgba(0, 0, 0, 0.8); }
+  .rail nav a[aria-current="page"] { color: #0d0f16; border-color: rgba(255, 255, 255, 0.6);
+    background: linear-gradient(180deg, #ffffff, #e6e9f4);
+    box-shadow: 0 10px 24px -12px rgba(255, 255, 255, 0.5), inset 0 -1px rgba(0, 0, 0, 0.14); }
+  .rail nav svg, .rail-cta svg { flex: none; width: clamp(13px, 0.92vw, 19px); height: clamp(13px, 0.92vw, 19px);
+    fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+  .rail nav svg { opacity: 0.72; transition: opacity 0.16s; }
+  .rail nav a[data-near="true"] svg, .rail nav a[aria-current="page"] svg { opacity: 1; }
+  .rail-cta { display: flex; gap: clamp(5px, 0.44vw, 9px); align-items: center; justify-content: space-between;
+              height: clamp(34px, 2.5vw, 50px); padding: 0 clamp(12px, 1vw, 22px); text-decoration: none; white-space: nowrap;
+              font-size: clamp(12px, 0.78vw, 17px); letter-spacing: -0.01em; }
+  .rail-cta svg { stroke-width: 1.5; }
+  /* chrome pill buttons: polished silver, a dark lip and a gold underglow; the bright reflection follows the pointer (--mx/--my) */
+  button, .rail-cta { --mx: 32%; --my: 18%; border: 0; border-radius: 999px; color: #15161a; font-weight: 600; cursor: pointer;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+    background:
+      radial-gradient(55% 85% at var(--mx) var(--my), rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 70%),
+      radial-gradient(45% 16% at 50% 91%, rgba(226, 182, 102, 0.9), rgba(226, 182, 102, 0) 100%),
+      linear-gradient(180deg, #fbfbfb 0%, #e3e4e6 26%, #a7a9ad 50%, #eeeeef 64%, #c4c5c8 71%,
+                      #1c1c1f 75%, #0a0a0b 81%, #5a4520 89%, #b48a45 93%, #2e2412 100%);
+    box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+                0 10px 24px -10px rgba(196, 154, 82, 0.6), 0 4px 12px rgba(0, 0, 0, 0.6);
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s; }
+  button:hover, .rail-cta:hover { transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+                0 14px 30px -10px rgba(214, 170, 92, 0.8), 0 6px 14px rgba(0, 0, 0, 0.6); }
+  button:active, .rail-cta:active { transform: translateY(0) scale(0.98); }
+  button:focus-visible, .rail-cta:focus-visible { outline: 2px solid #d6aa5c; outline-offset: 3px; }
+  /* the eclipse ring: dark at rest, gold when the button is hovered or focused */
+  button::before { content: ""; display: inline-block; width: 1em; height: 1em; margin-right: 0.5em; vertical-align: -0.15em;
+                   border-radius: 50%; background: radial-gradient(circle at 62% 50%, transparent 40%, #26262a 44%); }
+  button:hover::before, button:focus-visible::before {
+    background: radial-gradient(circle at 62% 50%, transparent 40%, #8c6a2c 44%); }
+  main { position: relative; z-index: 1; max-width: 1200px; padding: 16px 24px 48px;
+         margin-left: calc(clamp(20px, 3.4vw, 68px) + clamp(158px, 12.5vw, 250px)); }
+  /* phones only: the rail collapses to its icons (labels stay available to screen readers via aria-label).
+     Wider screens always show the labels beside the content, so the rail never has to expand over the panels. */
+  @media (max-width: 600px) {
+    .rail { width: auto; }
+    .rail span { display: none; }
+    .rail :is(nav a, .rail-cta) { justify-content: center; }
+    .rail nav a { height: auto; }
+    main { margin-left: 80px; padding: 16px 16px 48px; }
+  }
+
   a { color: var(--accent); }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .card, section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  /* frosted panels: the bead field shows through, blurred so text stays readable */
+  .card, section { background: var(--panel); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 14px 16px;
+                   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 12px 32px -18px rgba(0, 0, 0, 0.8);
+                   backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); }
   .card span { display: block; color: var(--muted); font-size: 13px; }
   .card b { font-size: 22px; }
   section { margin-bottom: 20px; overflow-x: auto; }
@@ -45,25 +123,289 @@ function chart(id, type, labels, datasets, options) {
   .error { color: var(--bad); font-weight: 600; }
   form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
   label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); }
-  input, select, button { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
-                          background: var(--bg); color: var(--text); }
-  button { background: var(--accent); color: #fff; border: 0; cursor: pointer; }
+  input, select { font: inherit; padding: 6px 8px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 8px;
+                  background: rgba(0, 0, 0, 0.28); color: var(--text); }
+  option { background: var(--bg); }
+  button { font: inherit; font-weight: 600; padding: 9px 22px 14px; }
   progress { width: 100%; height: 18px; }
+  /* overlay-style scrollbars: a thin frosted pill on a clear track, like macOS */
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.22)) padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.55) padding-box; }
+  @supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.32) transparent; }
+  }
 </style>
 </head>
 <body>
-<nav aria-label="Main">
-  <strong>☁ CloudPulse</strong>
-  {% for endpoint, label in [("overview", "Overview"), ("resources_page", "Resources"), ("costs", "Cost Analytics"),
-                             ("budget_page", "Budget"), ("optimization", "Optimization"), ("alerts", "Alerts"),
-                             ("reports", "Reports")] %}
-  <a href="{{ url_for('cloudpulse.' ~ endpoint) }}"
-     {% if request.endpoint == 'cloudpulse.' ~ endpoint %}aria-current="page"{% endif %}>{{ label }}</a>
-  {% endfor %}
-</nav>
+<div class="glass"><canvas aria-hidden="true"></canvas></div>
+<header class="rail">
+    <a class="rail-brand" href="{{ url_for('cloudpulse.overview') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="24" height="24" rx="4.5" fill="#E8E8E3" />
+        <path d="M6 6h8.6L18 9.35v8.15H9.15L6 14.35V6Z" fill="#111" />
+        <path d="M9 9h5.15L15 9.85V15H9.85L9 14.15V9Z" fill="#E8E8E3" />
+        <path d="M12 9v6M9 12h6" stroke="#111" stroke-width=".7" />
+      </svg>
+      <span>CloudPulse</span>
+    </a>
+    <hr aria-hidden="true">
+    <nav aria-label="Main">
+      {% for endpoint, label, icon in [
+        ("overview", "Overview", '<circle cx="8" cy="8" r="5.8" /><path d="M2.4 8c2.4-3.5 9-3.5 11.3 0" />'),
+        ("resources_page", "Resources", '<rect x="2.25" y="2.25" width="4.5" height="4.5" rx=".8" /><rect x="9.25" y="2.25" width="4.5" height="4.5" rx=".8" /><rect x="2.25" y="9.25" width="4.5" height="4.5" rx=".8" /><rect x="9.25" y="9.25" width="4.5" height="4.5" rx=".8" />'),
+        ("costs", "Cost Analytics", '<path d="M1.8 10.6c2.6 0 3-5.2 6.2-5.2s3.6 5.2 6.2 5.2" /><circle cx="8" cy="5.4" r=".9" />'),
+        ("budget_page", "Budget", '<path d="M8.6 2.2H13v4.4l-6.6 6.6a1.2 1.2 0 0 1-1.7 0L2.2 10.5a1.2 1.2 0 0 1 0-1.7z" /><circle cx="10.6" cy="4.6" r=".9" />'),
+        ("optimization", "Optimization", '<path d="M6.4 2.2v4L3 12.1a1.3 1.3 0 0 0 1.1 2h7.8a1.3 1.3 0 0 0 1.1-2L9.6 6.2v-4" /><path d="M5.6 2.2h4.8M4.9 9.6h6.2" />'),
+        ("alerts", "Alerts", '<circle cx="8" cy="8" r="5.9" /><path d="M8 4.6V8l2.4 1.5" />'),
+        ("reports", "Reports", '<path d="M3.4 2.4h5.4l3.8 3.8v7.4H3.4z" /><path d="M8.8 2.4v3.8h3.8M5.9 9h4.2M5.9 11.2h3" />'),
+      ] %}
+      <a href="{{ url_for('cloudpulse.' ~ endpoint) }}" aria-label="{{ label }}"
+         {% if request.endpoint == 'cloudpulse.' ~ endpoint %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 16 16" aria-hidden="true">{{ icon|safe }}</svg>
+        <span>{{ label }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <hr aria-hidden="true">
+    <a class="rail-cta" href="{{ url_for('cloudpulse.resources_page') }}">
+      <span>Add resource</span>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 8h9.2M8.8 4.2 12.6 8l-3.8 3.8" /></svg>
+    </a>
+  </header>
 <main>
 <h1>{{ self.title() }}</h1>
 {% block content %}{% endblock %}
 </main>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+// Chrome buttons: slide the reflection toward the pointer, and back to rest when it leaves.
+const chrome = (e) => e.target.closest?.("button, .rail-cta");
+addEventListener("pointermove", (e) => {
+  const b = chrome(e);
+  if (!b) return;
+  const r = b.getBoundingClientRect();
+  b.style.setProperty("--mx", `${((e.clientX - r.left) / r.width * 100).toFixed(1)}%`);
+  b.style.setProperty("--my", `${((e.clientY - r.top) / r.height * 100).toFixed(1)}%`);
+}, {passive: true});
+addEventListener("pointerout", (e) => {
+  const b = chrome(e);
+  if (b && !b.contains(e.relatedTarget)) { b.style.removeProperty("--mx"); b.style.removeProperty("--my"); }
+});
+
+// Rail: items near the pointer grow taller and lean right, driven by a damped spring along the y axis.
+const rail = (() => {
+  const PROXIMITY = 44, GROWTH = 20, LEAN = 11, SPRING = 0.19, DAMPING = 0.7;
+  const nav = document.querySelector(".rail nav");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)"), finePointer = matchMedia("(hover:hover) and (pointer:fine)");
+  const items = [...nav.querySelectorAll("a")].map((el) => ({el, base: 0, value: 0, velocity: 0, target: 0}));
+  let enabled = false, dirty = false;
+  const measure = () => {
+    enabled = !reduced.matches && finePointer.matches && innerWidth > 600;
+    for (const s of items) { s.el.style.height = s.el.style.transform = ""; s.el.dataset.near = false; }
+    for (const s of items) Object.assign(s, {base: s.el.getBoundingClientRect().height, value: 0, velocity: 0, target: 0});
+    dirty = false;
+  };
+  const aim = (targetOf) => {
+    if (!enabled) return;
+    items.forEach((s, i) => { s.target = targetOf(s, i); s.el.dataset.near = s.target > 0.08; });
+    dirty = true;
+  };
+  const reset = () => aim(() => 0);
+  nav.addEventListener("pointermove", (e) => aim((s) => {
+    const r = s.el.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, 1 - Math.abs(e.clientY - r.top - r.height / 2) / PROXIMITY));
+    return p * p * (3 - 2 * p);
+  }));
+  nav.addEventListener("pointerleave", reset);
+  // keyboard focus opens the focused item fully and its neighbours a little
+  nav.addEventListener("focusin", (e) => {
+    const index = items.findIndex((s) => s.el === e.target);
+    if (index >= 0) aim((s, i) => i === index ? 1 : Math.abs(i - index) === 1 ? 0.24 : 0);
+  });
+  nav.addEventListener("focusout", () => requestAnimationFrame(() => { if (!nav.contains(document.activeElement)) reset(); }));
+  addEventListener("resize", measure);
+  reduced.addEventListener("change", measure);
+  finePointer.addEventListener("change", measure);
+  measure();
+  return () => {
+    if (!enabled || !dirty) return;
+    let moving = false;
+    for (const s of items) {
+      s.velocity = (s.velocity + (s.target - s.value) * SPRING) * DAMPING;
+      s.value += s.velocity;
+      if (Math.abs(s.target - s.value) < 0.001 && Math.abs(s.velocity) < 0.001) { s.value = s.target; s.velocity = 0; }
+      else moving = true;
+      const v = Math.min(1.08, Math.max(0, s.value));
+      s.el.style.height = `${(s.base + GROWTH * v).toFixed(2)}px`;
+      s.el.style.transform = `translateX(${(LEAN * v).toFixed(2)}px)`;
+    }
+    dirty = moving;
+  };
+})();
+
+// Backdrop: drifting blooms, drawn once into a texture and once to the screen; glass beads refract that texture.
+function beadField(canvas) {
+  const QUAD_VERTEX = "void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }";
+  const BACKDROP_FRAGMENT = `precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uPointer;
+vec3 bloom(vec2 uv, vec2 centre, float radius, vec3 tint){
+  float aspect = uRes.x / max(uRes.y, 1.0);
+  float d = length((uv - centre) * vec2(aspect, 1.0));
+  float falloff = smoothstep(radius, 0.0, d);
+  return tint * falloff * falloff;
+}
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float t = uTime * 0.17;
+  vec3 col = vec3(0.085, 0.095, 0.125);
+  col += mix(vec3(0.0), vec3(0.05, 0.06, 0.10), uv.y);
+  col += bloom(uv, vec2(0.23 + 0.055 * sin(t * 0.9), 0.76 + 0.045 * cos(t * 0.7)), 0.86, vec3(0.24, 0.42, 0.96)) * 0.92;
+  col += bloom(uv, vec2(0.82 + 0.05 * cos(t * 0.8), 0.34 + 0.055 * sin(t * 1.1)), 0.80, vec3(0.66, 0.30, 0.88)) * 0.80;
+  col += bloom(uv, vec2(0.50 + 0.07 * sin(t * 0.6 + 1.7), 0.10 + 0.04 * cos(t * 0.9)), 0.74, vec3(0.14, 0.68, 0.70)) * 0.60;
+  col += bloom(uv, vec2(0.10 + 0.04 * cos(t * 1.2), 0.16 + 0.05 * sin(t * 0.8)), 0.58, vec3(0.98, 0.60, 0.40)) * 0.34;
+  col += bloom(uv, vec2(0.5 + uPointer.x * 0.20, 0.56 + uPointer.y * 0.16), 0.46, vec3(0.74, 0.78, 0.96)) * 0.30;
+  float vignette = smoothstep(1.34, 0.30, length((uv - 0.5) * vec2(1.05, 1.0)));
+  col *= mix(0.62, 1.0, vignette);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+  const GLASS_VERTEX = `varying vec3 vNormalView;
+varying vec3 vViewPos;
+varying vec4 vScreen;
+void main(){
+  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+  vNormalView = normalize(normalMatrix * normal);
+  vViewPos = mvPosition.xyz;
+  vScreen = projectionMatrix * mvPosition;
+  gl_Position = vScreen;
+}`;
+  // screen-space refraction with a slightly different index per colour channel, so bead edges split like real glass
+  const GLASS_FRAGMENT = `precision highp float;
+uniform sampler2D uBackdrop;
+uniform float uThickness;
+uniform float uDispersion;
+uniform float uSpecular;
+uniform float uRim;
+uniform vec3 uTint;
+uniform vec3 uLight;
+varying vec3 vNormalView;
+varying vec3 vViewPos;
+varying vec4 vScreen;
+void main(){
+  vec2 screenUV = (vScreen.xy / vScreen.w) * 0.5 + 0.5;
+  vec3 N = normalize(vNormalView);
+  vec3 V = normalize(-vViewPos);
+  vec3 I = -V;
+  float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.4);
+  vec2 offsetR = refract(I, N, 1.0 / (1.44 - uDispersion)).xy * uThickness;
+  vec2 offsetG = refract(I, N, 1.0 / 1.44).xy * uThickness;
+  vec2 offsetB = refract(I, N, 1.0 / (1.44 + uDispersion)).xy * uThickness;
+  vec3 col;
+  col.r = texture2D(uBackdrop, clamp(screenUV + offsetR, 0.002, 0.998)).r;
+  col.g = texture2D(uBackdrop, clamp(screenUV + offsetG, 0.002, 0.998)).g;
+  col.b = texture2D(uBackdrop, clamp(screenUV + offsetB, 0.002, 0.998)).b;
+  col *= uTint;
+  vec3 L = normalize(uLight);
+  vec3 H = normalize(L + V);
+  float ndoth = max(dot(N, H), 0.0);
+  col += pow(ndoth, 150.0) * uSpecular;
+  col += pow(ndoth, 16.0) * uSpecular * 0.11;
+  vec3 H2 = normalize(normalize(vec3(0.55, -0.7, 0.45)) + V);
+  col += pow(max(dot(N, H2), 0.0), 44.0) * uSpecular * 0.22;
+  col += fresnel * uRim * vec3(0.86, 0.90, 1.0);
+  float haze = smoothstep(7.4, 11.4, -vViewPos.z);
+  col = mix(col, texture2D(uBackdrop, screenUV).rgb, haze * 0.7);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+  const COUNT = 22, THICKNESS = 0.115, DISPERSION = 0.05, SPECULAR = 0.85, RIM = 0.5;
+
+  const ratio = Math.min(devicePixelRatio, 2);
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+  renderer.setPixelRatio(ratio);
+  const backdrop = new THREE.Scene(), flatCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const backdropUniforms = {uRes: {value: new THREE.Vector2(1, 1)}, uTime: {value: 0}, uPointer: {value: new THREE.Vector2()}};
+  backdrop.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+    uniforms: backdropUniforms, vertexShader: QUAD_VERTEX, fragmentShader: BACKDROP_FRAGMENT, depthTest: false, depthWrite: false})));
+  const target = new THREE.WebGLRenderTarget(2, 2);
+
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100), group = new THREE.Group();
+  camera.position.z = 7.4;
+  scene.add(group);
+  const shapes = [new THREE.SphereGeometry(1, 44, 30), new THREE.IcosahedronGeometry(1, 1), new THREE.TorusGeometry(0.78, 0.30, 22, 56)];
+  const tints = [new THREE.Color(1.04, 1.0, 1.02), new THREE.Color(0.97, 1.0, 1.06), new THREE.Color(1.05, 0.99, 0.97)];
+  // seeded, so the arrangement is the same on every page load
+  let seed = 20260826;
+  const random = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+  const beads = [];
+  for (let i = 0; i < COUNT; i++) {
+    // the first 8 are large hero beads (one gem, one ring); the rest are fine dust for depth
+    const hero = i < 8, radius = hero ? 0.40 + random() * 0.34 : 0.09 + random() * 0.18;
+    const mesh = new THREE.Mesh(shapes[i === 3 ? 1 : i === 6 ? 2 : 0], new THREE.ShaderMaterial({
+      uniforms: {uBackdrop: {value: target.texture}, uThickness: {value: THICKNESS * (0.55 + radius * 0.9)},
+                 uDispersion: {value: DISPERSION}, uSpecular: {value: SPECULAR}, uRim: {value: RIM},
+                 uTint: {value: tints[i % 3]}, uLight: {value: new THREE.Vector3(-0.45, 0.86, 0.62)}},
+      vertexShader: GLASS_VERTEX, fragmentShader: GLASS_FRAGMENT}));
+    mesh.scale.setScalar(radius);
+    // hero beads must not overlap: two intersecting spheres read as one blob
+    const origin = new THREE.Vector3();
+    for (let attempt = 0; attempt < 48; attempt++) {
+      origin.set((random() - 0.5) * 8.4, (random() - 0.5) * 5.0 - 0.25, hero ? -1.4 + random() * 2.6 : -3.6 + random() * 2.4);
+      if (!hero || beads.every((b) => Math.hypot(b.origin.x - origin.x, b.origin.y - origin.y) > (b.radius + radius) * 1.25 + 0.3)) break;
+    }
+    mesh.rotation.set(random() * 6.28, random() * 6.28, random() * 6.28);
+    group.add(mesh);
+    beads.push({mesh, origin, radius, bob: 0.14 + random() * 0.34, phase: random() * 6.28,
+                spin: [(random() - 0.5) * 0.28, (random() - 0.5) * 0.34, (random() - 0.5) * 0.2]});
+  }
+
+  const pointer = new THREE.Vector2(), pointerTarget = new THREE.Vector2();
+  let width = 0, height = 0, clock = 0, last = performance.now();
+  addEventListener("pointermove", (e) => pointerTarget.set(e.clientX / innerWidth * 2 - 1, 1 - e.clientY / innerHeight * 2), {passive: true});
+  return (now) => {
+    if (canvas.clientWidth !== width || canvas.clientHeight !== height) {
+      width = canvas.clientWidth; height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      target.setSize(Math.round(width * ratio), Math.round(height * ratio));
+      backdropUniforms.uRes.value.set(width * ratio, height * ratio);
+      camera.aspect = width / height;
+      // widen the view on tall screens instead of cropping the bead spread
+      camera.fov = camera.aspect > 1 ? 42 : 42 / Math.max(0.62, camera.aspect);
+      camera.updateProjectionMatrix();
+    }
+    clock += Math.min(96, now - last) * 0.001;
+    last = now;
+    pointer.lerp(pointerTarget, 0.045);
+    for (const b of beads) {
+      b.mesh.position.set(b.origin.x + Math.sin(clock * 0.21 + b.phase) * b.bob * 0.9,
+                          b.origin.y + Math.cos(clock * 0.27 + b.phase * 1.3) * b.bob,
+                          b.origin.z + Math.sin(clock * 0.17 + b.phase * 0.7) * b.bob * 0.5);
+      b.mesh.rotation.x += b.spin[0] * 0.0075;
+      b.mesh.rotation.y += b.spin[1] * 0.0075;
+      b.mesh.rotation.z += b.spin[2] * 0.0075;
+    }
+    group.rotation.set(-pointer.y * 0.1, pointer.x * 0.14, 0);
+    group.position.set(pointer.x * 0.28, pointer.y * 0.2, 0);
+    backdropUniforms.uTime.value = clock;
+    backdropUniforms.uPointer.value.copy(pointer);
+    renderer.setRenderTarget(target);
+    renderer.render(backdrop, flatCamera);
+    renderer.setRenderTarget(null);
+    renderer.render(backdrop, flatCamera);
+    renderer.autoClear = false;
+    renderer.render(scene, camera);
+    renderer.autoClear = true;
+  };
+}
+
+// without WebGL (or if the CDN is down) the page keeps its plain dark backdrop and the rail still works
+let renderBeads = null;
+try { renderBeads = beadField(document.querySelector(".glass canvas")); } catch (e) { console.warn("bead field disabled:", e); }
+const frame = (now) => { rail(); renderBeads?.(now); requestAnimationFrame(frame); };
+requestAnimationFrame(frame);
+</script>
 </body>
 </html>
