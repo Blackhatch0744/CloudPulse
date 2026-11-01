@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Resources{% endblock %}
+{% block content %}
+<section>
+  <h2>Registered resources</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Service</th><th>Type</th><th>Region</th><th>Status</th>
+      <th>CPU</th><th>Memory</th><th>Storage used</th><th>Monthly cost</th></tr></thead>
+    <tbody>
+    {% for r in resources %}
+      <tr><td><a href="{{ url_for('.resource_detail', rid=r.id) }}">{{ r.name }}</a></td>
+        <td>{{ r.service }}</td><td>{{ r.type }}</td><td>{{ r.region }}</td>
+        <td class="badge {{ r.status }}">{{ r.status }}</td>
+        <td>{{ r.cpu }}%</td><td>{{ r.memory }}%</td><td>{{ r.storage }}%</td><td>{{ r.monthly_cost|money }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+<section>
+  <h2>Register a resource</h2>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post">
+    <label>Name <input name="name" required maxlength="64"></label>
+    <label>Type <select name="type">{% for t, (svc, price) in types.items() %}
+      <option value="{{ t }}">{{ t }} ({{ svc }}, ${{ price }}/h)</option>{% endfor %}</select></label>
+    <label>Region <input name="region" value="us-east-1" required maxlength="32"></label>
+    <label>Status <select name="status">{% for s in statuses %}<option>{{ s }}</option>{% endfor %}</select></label>
+    <label>Storage (GB) <input name="storage_gb" type="number" min="0" step="any" value="0"></label>
+    <button>Add resource</button>
+  </form>
+</section>
+{% endblock %}

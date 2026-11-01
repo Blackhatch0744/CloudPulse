@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ r.name }}{% endblock %}
+{% block content %}
+<div class="cards">
+  <div class="card"><span>Status</span><b class="badge {{ r.status }}">{{ r.status }}</b></div>
+  <div class="card"><span>Service / type</span><b>{{ r.service }}</b> {{ r.type }}</div>
+  <div class="card"><span>Region</span><b>{{ r.region }}</b></div>
+  <div class="card"><span>CPU (7-day avg)</span><b>{{ r.cpu }}%</b> ({{ r.avg_cpu }}%)</div>
+  <div class="card"><span>Memory (7-day avg)</span><b>{{ r.memory }}%</b> ({{ r.avg_memory }}%)</div>
+  <div class="card"><span>Storage</span><b>{{ r.storage }}%</b> of {{ r.storage_gb|round|int }} GB</div>
+  <div class="card"><span>Daily / monthly cost</span><b>{{ r.daily_cost|money }}</b> {{ r.monthly_cost|money }}</div>
+</div>
+<section>
+  <h2>Historical usage (%)</h2>
+  <div class="chart"><canvas id="usage" role="img" aria-label="CPU, memory and storage history"></canvas></div>
+</section>
+<p><a href="{{ url_for('.resources_page') }}">← All resources</a></p>
+<script>
+chart("usage", "line", {{ r.history|map(attribute="day")|list|tojson }}, [
+  {label: "CPU", data: {{ r.history|map(attribute="cpu")|list|tojson }}, pointRadius: 0},
+  {label: "Memory", data: {{ r.history|map(attribute="memory")|list|tojson }}, pointRadius: 0},
+  {label: "Storage", data: {{ r.history|map(attribute="storage")|list|tojson }}, pointRadius: 0}
+], {scales: {y: {min: 0, max: 100}}});
+</script>
+{% endblock %}

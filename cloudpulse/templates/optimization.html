@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Resource Optimization{% endblock %}
+{% block content %}
+<div class="cards">
+  <div class="card"><span>Potential monthly saving</span><b>{{ data.total_saving|money }}</b></div>
+  <div class="card"><span>Underutilized resources</span><b>{{ data.underutilized|length }}</b></div>
+  <div class="card"><span>High consumption resources</span><b>{{ data.high_usage|length }}</b></div>
+</div>
+<section>
+  <h2>Cost-saving recommendations</h2>
+  <table>
+    <thead><tr><th>Resource</th><th>Recommendation</th><th>Saving / month</th></tr></thead>
+    <tbody>{% for x in data.recommendations %}
+      <tr><td>{{ x.resource }}</td><td>{{ x.action }}</td><td>{{ x.saving|money }}</td></tr>
+    {% else %}<tr><td colspan="3">No recommendations.</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% for title, rows in [("Underutilized resources (CPU below 10%)", data.underutilized),
+                       ("Unusually high consumption", data.high_usage),
+                       ("Most expensive resources", data.expensive)] %}
+<section>
+  <h2>{{ title }}</h2>
+  <table>
+    <thead><tr><th>Resource</th><th>Type</th><th>CPU 7-day avg</th><th>Memory 7-day avg</th><th>Monthly cost</th></tr></thead>
+    <tbody>{% for r in rows %}
+      <tr><td><a href="{{ url_for('.resource_detail', rid=r.id) }}">{{ r.name }}</a></td><td>{{ r.type }}</td>
+        <td>{{ r.avg_cpu }}%</td><td>{{ r.avg_memory }}%</td><td>{{ r.monthly_cost|money }}</td></tr>
+    {% else %}<tr><td colspan="5">None.</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endfor %}
+{% endblock %}

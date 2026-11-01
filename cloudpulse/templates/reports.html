@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Reports & Analytics{% endblock %}
+{% block content %}
+<section>
+  <h2>Daily expenditure (last 30 days)</h2>
+  <div class="chart"><canvas id="daily" role="img" aria-label="Daily expenditure"></canvas></div>
+</section>
+<section>
+  <h2>Monthly expenditure</h2>
+  <table>
+    <thead><tr><th>Month</th><th>Spent</th></tr></thead>
+    <tbody>{% for m in data.monthly %}<tr><td>{{ m.month }}</td><td>{{ m.cost|money }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+<section>
+  <h2>This week vs last week</h2>
+  {% set now, prev = data.comparison.this_week, data.comparison.last_week %}
+  <table>
+    <thead><tr><th></th><th>Last week</th><th>This week</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td>Average CPU</td><td>{{ prev.avg_cpu }}%</td><td>{{ now.avg_cpu }}%</td><td>{{ (now.avg_cpu - prev.avg_cpu)|round(1) }} pts</td></tr>
+      <tr><td>Average memory</td><td>{{ prev.avg_memory }}%</td><td>{{ now.avg_memory }}%</td><td>{{ (now.avg_memory - prev.avg_memory)|round(1) }} pts</td></tr>
+      <tr><td>Spend</td><td>{{ prev.cost|money }}</td><td>{{ now.cost|money }}</td><td>{{ (now.cost - prev.cost)|money }}</td></tr>
+    </tbody>
+  </table>
+</section>
+<section>
+  <h2>Resource utilization (last 30 days)</h2>
+  <table>
+    <thead><tr><th>Resource</th><th>Avg CPU</th><th>Peak CPU</th><th>Avg memory</th><th>Peak memory</th><th>Storage used</th></tr></thead>
+    <tbody>{% for u in data.utilization %}
+      <tr><td>{{ u.name }}</td><td>{{ u.avg_cpu }}%</td><td>{{ u.max_cpu }}%</td>
+        <td>{{ u.avg_memory }}%</td><td>{{ u.max_memory }}%</td><td>{{ u.storage }}%</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+<section>
+  <h2>Cost distribution by service</h2>
+  <div class="chart"><canvas id="dist" role="img" aria-label="Cost distribution by service"></canvas></div>
+</section>
+<section>
+  <h2>Optimization summary</h2>
+  <p>{{ data.optimization.recommendations }} recommendations could save
+    <b>{{ data.optimization.total_saving|money }}</b> per month.
+    {{ data.optimization.underutilized }} underutilized and {{ data.optimization.high_usage }} high-consumption resources.
+    <a href="{{ url_for('.optimization') }}">Details</a></p>
+</section>
+<script>
+chart("daily", "bar", {{ data.daily|map(attribute="day")|list|tojson }},
+      [{label: "USD", data: {{ data.daily|map(attribute="cost")|list|tojson }}}]);
+chart("dist", "pie", {{ data.by_service.keys()|list|tojson }}, [{data: {{ data.by_service.values()|list|tojson }}}]);
+</script>
+{% endblock %}
