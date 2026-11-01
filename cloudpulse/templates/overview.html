@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="cards">
+  <div class="card"><span>Infrastructure status</span><b class="badge {{ data.status|lower }}">{{ data.status }}</b>
+    <a href="{{ url_for('.alerts') }}">{{ data.alerts }} alerts</a></div>
+  <div class="card"><span>Registered resources</span><b>{{ data.total }}</b></div>
+  <div class="card"><span>Active / inactive</span><b>{{ data.active }} / {{ data.inactive }}</b>
+    {% if data.failed %}<span class="failed">{{ data.failed }} failed</span>{% endif %}</div>
+  <div class="card"><span>Estimated monthly cost</span><b>{{ data.monthly_cost|money }}</b></div>
+  <div class="card"><span>Spent this month</span><b>{{ data.month_to_date|money }}</b></div>
+  <div class="card"><span>Average CPU</span><b>{{ data.avg_cpu }}%</b></div>
+  <div class="card"><span>Average memory</span><b>{{ data.avg_memory }}%</b></div>
+</div>
+<section>
+  <h2>Estimated monthly cost by service</h2>
+  <div class="chart"><canvas id="by-service" role="img" aria-label="Monthly cost by service"></canvas></div>
+</section>
+<script>
+chart("by-service", "doughnut", {{ data.by_service.keys()|list|tojson }},
+      [{data: {{ data.by_service.values()|list|tojson }}}]);
+</script>
+{% endblock %}

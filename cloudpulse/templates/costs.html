@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Cost Analytics{% endblock %}
+{% block content %}
+<div class="cards">
+  <div class="card"><span>Daily cost (current)</span><b>{{ data.daily|money }}</b></div>
+  <div class="card"><span>Estimated monthly cost</span><b>{{ data.monthly|money }}</b></div>
+  <div class="card"><span>Spent this month</span><b>{{ data.month_to_date|money }}</b></div>
+</div>
+<section>
+  <h2>Daily spending trend (last {{ data.history|length }} days)</h2>
+  <div class="chart"><canvas id="trend" role="img" aria-label="Daily spending trend"></canvas></div>
+</section>
+<section>
+  <h2>Monthly cost by service</h2>
+  <div class="chart"><canvas id="by-service" role="img" aria-label="Monthly cost by service"></canvas></div>
+</section>
+<section>
+  <h2>Monthly cost by resource</h2>
+  <table>
+    <thead><tr><th>Resource</th><th>Service</th><th>Monthly cost</th></tr></thead>
+    <tbody>{% for r in data.by_resource %}
+      <tr><td><a href="{{ url_for('.resource_detail', rid=r.id) }}">{{ r.name }}</a></td>
+        <td>{{ r.service }}</td><td>{{ r.monthly_cost|money }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+<script>
+chart("trend", "line", {{ data.history|map(attribute="day")|list|tojson }},
+      [{label: "USD per day", data: {{ data.history|map(attribute="cost")|list|tojson }}, pointRadius: 0}]);
+chart("by-service", "bar", {{ data.by_service.keys()|list|tojson }},
+      [{label: "USD per month", data: {{ data.by_service.values()|list|tojson }}}]);
+</script>
+{% endblock %}

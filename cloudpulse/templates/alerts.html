@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<div class="cards">
+  <div class="card"><span>Critical</span><b class="critical">{{ alerts|selectattr("severity", "eq", "critical")|list|length }}</b></div>
+  <div class="card"><span>Warnings</span><b class="warning">{{ alerts|selectattr("severity", "eq", "warning")|list|length }}</b></div>
+</div>
+<section>
+  <table>
+    <thead><tr><th>Severity</th><th>Category</th><th>Message</th></tr></thead>
+    <tbody>{% for a in alerts %}
+      <tr><td class="badge {{ a.severity }}">{{ a.severity }}</td><td>{{ a.category }}</td><td>{{ a.message }}</td></tr>
+    {% else %}<tr><td colspan="3">All clear, no alerts.</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endblock %}

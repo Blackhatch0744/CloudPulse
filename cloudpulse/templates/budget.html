@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Budget Management{% endblock %}
+{% block content %}
+<div class="cards">
+  <div class="card"><span>Monthly budget</span><b>{{ data.amount|money }}</b></div>
+  <div class="card"><span>Spent this month</span><b>{{ data.spent|money }}</b></div>
+  <div class="card"><span>Projected month end</span><b>{{ data.projected|money }}</b></div>
+  <div class="card"><span>Remaining</span><b>{{ data.remaining|money }}</b></div>
+  <div class="card"><span>Status</span><b class="badge {{ data.status|replace(' ', '-') }}">{{ data.status }}</b></div>
+</div>
+<section>
+  <h2>Budget used: {{ data.used_pct }}%</h2>
+  <progress value="{{ [data.used_pct, 100]|min }}" max="100" aria-label="Budget used"></progress>
+</section>
+<section>
+  <h2>Spending alerts</h2>
+  {% for a in alerts %}<p class="badge {{ a.severity }}">{{ a.severity }}: {{ a.message }}</p>
+  {% else %}<p>No budget alerts.</p>{% endfor %}
+</section>
+<section>
+  <h2>Set monthly budget</h2>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post">
+    <label>Amount (USD) <input name="amount" type="number" min="1" step="any" value="{{ data.amount }}" required></label>
+    <button>Save budget</button>
+  </form>
+</section>
+{% endblock %}
