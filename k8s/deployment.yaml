@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudpulse
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cloudpulse
+  template:
+    metadata:
+      labels:
+        app: cloudpulse
+    spec:
+      containers:
+        - name: cloudpulse
+          image: cloudpulse:1.0.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
