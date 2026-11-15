@@ -1,0 +1,21 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# In the Render dashboard choose New > Blueprint and pick this repo.
+services:
+  - type: web
+    name: cloudpulse
+    runtime: python
+    plan: free
+    buildCommand: pip install ".[deploy]"
+    # One worker so only one process seeds the SQLite file; threads handle concurrent requests.
+    startCommand: gunicorn "cloudpulse:create_app()" --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 60
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # Render generates a random value; copy it from the Environment tab to log in.
+      - key: CLOUDPULSE_ADMIN_TOKEN
+        generateValue: true
+      # The free plan's disk is wiped on every restart or deploy; the app reseeds sample data.
+      - key: CLOUDPULSE_DB
+        value: /tmp/cloudpulse.db

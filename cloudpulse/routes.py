@@ -2,11 +2,13 @@ from datetime import date
 
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 
-from . import analytics
+from . import analytics, auth
 from .db import get_db
 from .pricing import HOURLY
 
 bp = Blueprint("cloudpulse", __name__)
+bp.before_request(auth.protect_writes)
+bp.get("/login")(auth.login)
 STATUSES = ("active", "inactive", "failed")
 
 

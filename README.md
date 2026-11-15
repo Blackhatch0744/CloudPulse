@@ -63,6 +63,19 @@ pytest
 python -m build --wheel    # writes dist/cloudpulse-1.0.0-py3-none-any.whl
 ```
 
+## Deploy to Render
+
+`render.yaml` is a Render Blueprint. In the Render dashboard choose **New > Blueprint**, pick
+this repo and click **Apply**. It runs the app with gunicorn on the free plan and checks `/health`.
+
+- **Write protection:** Render generates `CLOUDPULSE_ADMIN_TOKEN`. Reads are public; any
+  POST/PUT needs the token. In a browser, open `/login` and enter any username with the token
+  as the password. API clients send `Authorization: Bearer <token>`. Leave the variable unset
+  locally to keep writes open.
+- **Data resets:** the free plan has no persistent disk, so the SQLite file is recreated (and
+  the sample data reseeded) on every restart or deploy.
+- **Cold starts:** free services sleep after 15 minutes idle; the first request takes ~30-60 s.
+
 ## Pipeline
 
 1. **Jenkins** (`Jenkinsfile`): polls the repo every minute, then sets up a venv, runs

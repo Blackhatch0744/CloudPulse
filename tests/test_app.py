@@ -44,3 +44,29 @@ def test_optimization_flags_idle_and_stopped_resources(client):
     assert "batch-worker" in [r["name"] for r in data["underutilized"]]
     assert {"dev-sandbox", "legacy-app"} <= {x["resource"] for x in data["recommendations"]}
     assert data["total_saving"] > 0
+
+
+@pytest.fixture
+def secured(tmp_path):
+    return create_app(str(tmp_path / "secure.db"), admin_token="s3cret").test_client()
+
+
+def test_writes_need_the_admin_token(secured):
+    body = {"name": "x-vm", "type": "t3.micro"}
+    assert secured.get("/api/resources").status_code == 200  # reads stay public
+    assert secured.post("/api/resources", json=body).status_code == 401
+    assert secured.put("/api/budget", json={"amount": 9},
+                       headers={"Authorization": "Bearer wrong"}).status_code == 401
+    assert secured.post("/budget", data={"amount": "9"}).status_code == 401
+    assert secured.post("/api/resources", json=body,
+                        headers={"Authorization": "Bearer s3cret"}).status_code == 201
+
+
+def test_browser_basic_auth_and_cross_site_block(secured):
+    import base64
+    basic = {"Authorization": "Basic " + base64.b64encode(b"admin:s3cret").decode()}
+    assert secured.get("/login").status_code == 401
+    assert secured.get("/login", headers=basic).status_code == 302
+    assert secured.post("/budget", data={"amount": "9"}, headers=basic).status_code == 302
+    evil = {**basic, "Origin": "https://evil.example"}
+    assert secured.post("/budget", data={"amount": "9"}, headers=evil).status_code == 403

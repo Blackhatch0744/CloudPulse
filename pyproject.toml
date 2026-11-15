@@ -11,6 +11,7 @@ dependencies = ["flask>=3.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "build>=1"]
+deploy = ["gunicorn>=23"]
 
 [project.scripts]
 cloudpulse = "cloudpulse.__main__:main"
