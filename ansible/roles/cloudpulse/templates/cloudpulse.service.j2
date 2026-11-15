@@ -1,0 +1,14 @@
+[Unit]
+Description=CloudPulse dashboard
+After=network.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=cloudpulse
+Environment=PORT={{ app_port }}
+Environment=CLOUDPULSE_DB=/var/lib/cloudpulse/cloudpulse.db
+ExecStart={{ app_dir }}/venv/bin/cloudpulse
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

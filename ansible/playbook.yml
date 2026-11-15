@@ -1,0 +1,5 @@
+- name: Deploy CloudPulse
+  hosts: app
+  become: true
+  roles:
+    - cloudpulse
