@@ -5,8 +5,7 @@ ElastiCache and EKS resources, estimates daily cost, compares spend to a monthly
 raises alerts and suggests savings. Data lives in SQLite. The first run seeds sample
 resources and 90 days of history.
 
-**Live demo:** https://cloudpulse-yiup.onrender.com (free plan, so the first visit can take
-up to a minute to wake it up).
+**Live demo:** https://cloudpulse-yiup.onrender.com (can take up to a minute to wake it up).
 
 The repo also holds the full DevOps pipeline: Jenkins CI, a Docker image, a Kubernetes
 deployment and an Ansible role.
